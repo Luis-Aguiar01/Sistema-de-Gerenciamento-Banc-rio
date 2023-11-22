@@ -21,8 +21,11 @@ typedef struct bank {
 void insertUser(User **startNodeUsers);
 void deleteUser(User **startNodeUsers, char login[]);
 int confirmPassword(User *user);
+void setAccountInformation(User **startNodeUsers,User *user);
+int checkAvaliableLogin(User **startNodeUsers, char login[]);
 void clearTerminal(void);
 void waitingEnter(void);
+void menuOptions(void);
 
 int main(void) {
 
@@ -42,6 +45,8 @@ void insertUser(User **startNodeUsers) {
         printf(RED"\n\nFalha na alocacao dinamica. Encerrando...\n\n"RESET);
         exit(0);
     }
+
+    setAccountInformation(startNodeUsers, newNodeUser);
 
     currentNodeUser = *startNodeUsers;
 
@@ -96,7 +101,7 @@ int confirmPassword(User *user) {
     char password[50];
 
     printf("Digite a senha para acessar a conta: ");
-    scanf("%[^\n]", password);
+    scanf(" %[^\n]", password);
 
     if (strcmp(user->password, password) == 0) {
         printf(GREEN"\n\nAcesso permitido.\n\n"RESET);
@@ -104,6 +109,60 @@ int confirmPassword(User *user) {
     }
 
     return 0;
+}
+
+void setAccountInformation(User **startNodeUsers,User *user) {
+
+    char name[50];
+    char login[50];
+    char password[50];
+
+    printf("Digite o seu nome: ");
+    scanf(" %[^\n]", user->name);
+
+    printf("Digite o seu nome de login: ");
+    scanf(" %[^\n]", user->login);
+
+    while (checkAvaliableLogin(startNodeUsers, user->login) == 0) {
+        printf(RED"\nLogin nao disponivel. Por favor, digite outro login\n"RESET);
+        printf("Digite o seu nome de login: ");
+        scanf(" %[^\n]", user->login);
+    }
+
+    printf("Digite a sua senha: ");
+    scanf(" %[^\n]", user->password);
+
+    printf(RED"\n\nConta criada com sucesso!\n\n"RESET);
+    waitingEnter();
+}
+
+int checkAvaliableLogin(User **startNodeUsers, char login[]) {
+
+    User *currentUser = NULL;
+
+    currentUser = *startNodeUsers;
+
+    while (currentUser != NULL) {
+
+        if (strcmp(currentUser->login, login) == 0) {
+            return 0;
+        }
+
+        currentUser = currentUser->nextUser;
+    }
+
+    return 1;
+}
+
+void menuOptions(void) {
+
+    pritnf("==============================================\n");
+    printf("||              MENU DE OPCOES              ||\n");
+    pritnf("==============================================\n");
+    printf("|| [1] Login                                ||\n");
+    printf("|| [2] Cadastrar                            ||\n");
+    printf("|| [0] Sair                                 ||\n");
+    printf("==============================================\n");
 }
 
 void clearTerminal(void) {
