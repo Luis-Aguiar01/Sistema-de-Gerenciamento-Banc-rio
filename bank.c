@@ -381,9 +381,11 @@ void getMoney(User *user) {
     }
     else {
         user->money -= value;
-        printf(GREEN"\n\nSaque de R$%.2lf realizado com sucesso!!\n\n");
+        printf(GREEN"\n\nSaque de R$%.2lf realizado com sucesso!!\n\n", value);
         printf(GREEN"Saldo da conta: R$%.2lf\n", user->money);
     }
+
+    waitingEnter();
 }
 
 void accountData(User *user) {
@@ -432,7 +434,7 @@ void transfer(User **startNodeUsers, User *user) {
     checkAccountData(accountForMoneyTransfer);
 
     printf(BLUE"\n\nDeseja transferir para essa conta[S/N]? "RESET);
-    scanf("%c", &choice);
+    scanf(" %c", &choice);
 
     if (toupper(choice) == 'S') {
         printf(BLUE"Digite o valor da transferencia: "RESET);
@@ -446,6 +448,7 @@ void transfer(User **startNodeUsers, User *user) {
 
         accountForMoneyTransfer->money += value;
         accountForMoneyTransfer->receiveTransfer = 1;
+        user->money -= value;
 
         printReceipt(user, accountForMoneyTransfer, value);
 
