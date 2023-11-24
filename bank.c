@@ -48,6 +48,8 @@ void transfer(User **startNodeUsers, User *user);
 User *searchID(User **startNodeUsers, int ID);
 void checkAccountData(User *user);
 void printReceipt(User *user, User *account, double value);
+int checkAvaliableValue(User *user, double value);
+void showAccountDetails(User *user);
 
 int main(void) {
 
@@ -141,7 +143,7 @@ int confirmPassword(User *user) {
     return 0;
 }
 
-void setAccountInformation(User **startNodeUsers,User *user) {
+void setAccountInformation(User **startNodeUsers, User *user) {
 
     clearTerminal();
 
@@ -179,8 +181,25 @@ void setAccountInformation(User **startNodeUsers,User *user) {
     user->money = 0.0;
     user->receiveTransfer = 0;
 
+    showAccountDetails(user);
+
     printf(GREEN"\n\nConta criada com sucesso!\n\n"RESET);
     waitingEnter();
+}
+
+void showAccountDetails(User *user) {
+
+    clearTerminal();
+
+    printf(GREEN"=====================================================================\n");
+    printf("||                         DETALHES DA CONTA                       ||\n");
+    printf("=====================================================================\n");
+    printf("|| Nome: %-15s                                           ||\n", user->name);
+    printf("|| Login: %-15s                                          ||\n", user->login);
+    printf("|| ID: %-3d                                                         ||\n", user->ID);
+    printf("|| Saldo: R$%-10.2lf                                             ||\n", user->money);
+    printf("=====================================================================\n"RESET);
+
 }
 
 int checkAvaliableLogin(User **startNodeUsers, char login[]) {
@@ -437,11 +456,13 @@ void transfer(User **startNodeUsers, User *user) {
     scanf(" %c", &choice);
 
     if (toupper(choice) == 'S') {
+        
+        printf(GREEN"\nSeu saldo atual: R$%.2lf\n\n"RESET, user->money);
         printf(BLUE"Digite o valor da transferencia: "RESET);
         scanf("%lf", &value);
 
-        while (value < 0.0) {
-            printf(RED"\n\nValor invalido. Digite um valor positivo para a transferencia.\n\n"RESET);
+        while ((value < 0.0) || (checkAvaliableValue(user, value) == 0)) {
+            printf(RED"\n\nValor invalido. Digite um valor positivo e disponivel na conta.\n\n"RESET);
             printf(BLUE"Digite o valor da transferencia: "RESET);
             scanf("%lf", &value);
         }
@@ -453,7 +474,7 @@ void transfer(User **startNodeUsers, User *user) {
         printReceipt(user, accountForMoneyTransfer, value);
 
         printf(GREEN"\n\nTransferencia realizada com sucesso!\n\n"RESET);
-        printf(GREEN"Saldo atual: R$%.2lf\n", user->money);
+        printf(GREEN"Saldo atual: R$%.2lf\n"RESET, user->money);
         
         waitingEnter();
     }
@@ -485,9 +506,9 @@ User *searchID(User **startNodeUsers, int ID) {
 
 void checkAccountData(User *user) {
 
-    printf(GREEN"==========================================================\n");
-    printf("||                     CONFIRMAR CONTA                  ||\n");
-    printf("==========================================================\n");
+    printf(GREEN"=========================================================\n");
+    printf("||                     CONFIRMAR CONTA                 ||\n");
+    printf("=========================================================\n");
     printf("|| Nome: %-15s                               ||\n", user->name);
     printf("|| ID: %-3d                                             ||\n", user->ID);
     printf("=========================================================\n"RESET);
@@ -495,13 +516,24 @@ void checkAccountData(User *user) {
 
 void printReceipt(User *user, User *account, double value) {
 
-    printf(GREEN"=========================================================\n");
-    printf("||                 DETALHES DA TRANSFERENCIA           ||\n");
-    printf("=========================================================\n"RESET);
-    printf("|| Seu nome: %s                                        ||\n", user->name);
-    printf("|| Enviado para: %s                                    ||\n", account->name);
-    printf("|| Valor da transferencia: R$%.2lf                     ||\n", value);
-    printf("=========================================================\n");
+    clearTerminal();
+
+    printf(GREEN"======================================================================\n");
+    printf("||                 DETALHES DA TRANSFERENCIA                        ||\n");
+    printf("======================================================================\n");
+    printf("|| Seu nome: %-15s                                        ||\n", user->name);
+    printf("|| Enviado para: %-15s                                    ||\n", account->name);
+    printf("|| Valor da transferencia: R$%-15.2lf                        ||\n", value);
+    printf("======================================================================\n"RESET);
+}
+
+int checkAvaliableValue(User *user, double value) {
+
+    if (user->money >= value) {
+        return 1;
+    }
+
+    return 0;
 }
 
 // ========================================== INTERFACE ============================================== //
