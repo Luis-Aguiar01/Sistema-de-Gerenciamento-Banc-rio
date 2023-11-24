@@ -9,6 +9,12 @@
 #define YELLOW "\033[1;33m"
 #define GOLDEN "\033[1;38;5;220m"
 
+typedef struct registro {
+    char name[50];
+    double value;
+    char type[50];
+} Registro;
+
 typedef struct user {
     char name[50];
     char login[30];
@@ -17,6 +23,7 @@ typedef struct user {
     int ID;
     char *history[30];
     int receiveTransfer;
+    struct registro registro[30];
     struct user *nextUser;
     struct user *previousUser;
 } User;
@@ -50,6 +57,8 @@ void checkAccountData(User *user);
 void printReceipt(User *user, User *account, double value);
 int checkAvaliableValue(User *user, double value);
 void showAccountDetails(User *user);
+Registro *searchNewRegister(User *user);
+void showRegistersAccount(User *user);
 
 int main(void) {
 
@@ -58,6 +67,7 @@ int main(void) {
     interfaceStartProgram();
 
     startProgram(&startNodeUser);
+    
     
 
 }
@@ -116,9 +126,23 @@ void deleteUser(User **startNodeUsers, char login[]) {
     else {
 
         if (confirmPassword(currentNodeUser)) {
-            previousNodeUser->nextUser = currentNodeUser->nextUser;
-            free(currentNodeUser);
-
+            
+            if (previousNodeUser == NULL) {
+                
+                if (currentNodeUser->nextUser == NULL) {
+                    free(currentNodeUser);
+                    *startNodeUsers = NULL;
+                }
+                else {
+                    *startNodeUsers = currentNodeUser->nextUser;
+                    free(currentNodeUser);
+                }
+            }
+            else {
+                previousNodeUser->nextUser = currentNodeUser->nextUser;
+                free(currentNodeUser);
+            }
+            
             printf(GREEN"\nA sua conta foi deletada.\n"RESET);
             waitingEnter();
         }
@@ -133,7 +157,7 @@ int confirmPassword(User *user) {
 
     char password[50];
 
-    printf(BLUE"\nDigite a senha para acessar a conta: "RESET);
+    printf(BLUE"\nDigite a senha da conta: "RESET);
     scanf(" %[^\n]", password);
 
     if (strcmp(user->password, password) == 0) {
@@ -278,12 +302,18 @@ void accountChoices(User **startNodeUsers , User *user) {
                 accountData(user);
                 break;
             case 5:
+                showRegistersAccount(user);
                 break;
             case 6:
+                deleteUser(startNodeUsers, user->login);
+                choice = 0;
                 break;
             case 0:
+                choice = 0;
                 break;
             default:
+                printf(RED"\n\nEscolha invalida.\n\n"RESET);
+                waitingEnter();
                 break;
         }
     }
@@ -367,6 +397,11 @@ void deposit(User *user) {
     }
 
     user->money += value;
+    Registro *currentRegister = searchNewRegister(user);
+
+    strcpy(currentRegister->name, "Voce");
+    strcpy(currentRegister->type, "Deposito");
+    currentRegister->value = value;
 
     printf(GREEN"\n\nDeposito de R$%.2lf realizado com sucesso!!\n\n"RESET, value);
     printf(GREEN"Saldo da conta: R$%.2lf\n", user->money);
@@ -400,6 +435,13 @@ void getMoney(User *user) {
     }
     else {
         user->money -= value;
+
+        Registro *currentRegister = searchNewRegister(user);
+
+        strcpy(currentRegister->name, "Voce");
+        strcpy(currentRegister->type, "Saque");
+        currentRegister->value = -value;
+
         printf(GREEN"\n\nSaque de R$%.2lf realizado com sucesso!!\n\n", value);
         printf(GREEN"Saldo da conta: R$%.2lf\n", user->money);
     }
@@ -419,6 +461,11 @@ void accountData(User *user) {
     printf("|| ID: %-3d                                             ||\n", user->ID);
     printf("|| Saldo: R$%-10.2f                                 ||\n", user->money);
     printf("=========================================================\n"RESET);
+
+    if (user->receiveTransfer != 0) {
+        printf(GOLDEN"\n\nVoce recebeu %d transferencia(s).\n\n"RESET, user->receiveTransfer);
+        user->receiveTransfer = 0;
+    }
 
     waitingEnter();
 }
@@ -468,8 +515,8 @@ void transfer(User **startNodeUsers, User *user) {
         }
 
         accountForMoneyTransfer->money += value;
-        accountForMoneyTransfer->receiveTransfer = 1;
         user->money -= value;
+        accountForMoneyTransfer->receiveTransfer++;
 
         printReceipt(user, accountForMoneyTransfer, value);
 
@@ -482,7 +529,6 @@ void transfer(User **startNodeUsers, User *user) {
         printf(RED"\n\nTransferencia cancelada.\n\n"RESET);
         waitingEnter();
     }
-
 }
 
 User *searchID(User **startNodeUsers, int ID) {
@@ -534,6 +580,47 @@ int checkAvaliableValue(User *user, double value) {
     }
 
     return 0;
+}
+
+Registro *searchNewRegister(User *user) {
+
+    for (int i = 0; i < 30; i++) {
+        
+        if(user->registro[i].value == 0.0) {
+            return &(user->registro[i]);
+        }
+    }
+
+    return NULL;
+}
+
+void showRegistersAccount(User *user) {
+    
+    clearTerminal();
+
+    printf(GREEN"=======================================================================================\n");
+    printf("||                           AREA DE ATIVIDADE DA CONTA                              ||\n");
+    printf("=======================================================================================\n\n\n"RESET);
+
+    if (user->registro[0].value == 0.0) {
+        printf(RED"Nenhuma atividade registrada ainda.\n\n");
+        waitingEnter();
+    }
+    else {
+        printf(GREEN"=======================================================================================\n");
+        printf("|            Nome           |             Tipo              |           Valor         |\n");
+        printf("=======================================================================================\n\n");
+
+        for (int i = 0; user->registro[i].value != 0.0; i++) {
+            printf("---------------------------------------------------------------------------------------\n");
+            printf("|     %-15s       |         %-15s       |          R$%-7.2lf      |\n", user->registro[i].name, user->registro[i].type, user->registro[i].value);
+            printf("---------------------------------------------------------------------------------------\n\n");
+        }
+
+        printf(RESET);
+        
+        waitingEnter();
+    }
 }
 
 // ========================================== INTERFACE ============================================== //
