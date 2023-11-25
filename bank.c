@@ -28,12 +28,10 @@ typedef struct user {
     struct user *previousUser;
 } User;
 
-typedef struct bank {
-    double totalMoney;
-    int totalUsers;
-    void (*calcTotalUsers)(User **startNodeUsers);
-    void (*calcTotalMoney)(User **startNodeUsers);
-} Bank;
+typedef struct admin {
+    char login[30];
+    char password[30];
+} Admin;
 
 void insertUser(User **startNodeUsers);
 void deleteUser(User **startNodeUsers, char login[]);
@@ -42,7 +40,7 @@ void setAccountInformation(User **startNodeUsers, User *user);
 int checkAvaliableLogin(User **startNodeUsers, char login[]);
 User* accountLogin(User **startNodeUsers);
 User* searchLoginUser(User **startNodeUsers, char login[]);
-void startProgram(User **startNodeUsers);
+void startProgram(User **startNodeUsers, Admin *admin);
 void clearTerminal(void);
 void waitingEnter(void);
 void interfaceMenuOptions(void);
@@ -61,15 +59,28 @@ int checkAvaliableValue(User *user, double value);
 void showAccountDetails(User *user);
 Registro *searchNewRegister(User *user);
 void showRegistersAccount(User *user);
+void startAdminAccount(Admin *admin);
+void interfaceAdminOptions();
+int loginAdmin(Admin *admin);
+void choicesAdminOptions(Admin *admin, User **startNodeUsers);
+void showMoneyInTheBank(User **startNodeUsers);
+int calcQuantityUsers(User **startNodeUsers);
+User *getIdAccount(User **startNodeUsers);
+void showAccountDetailsAdmin(User *user);
+void showQuantityUsers(User **startNodeUsers);
+double calcTotalMoney(User *user);
+User *searchAccount(User *user, int ID);
 
 int main(void) {
 
     User *startNodeUser = NULL;
-    Bank bankInformation;
+    Admin admin;
+
+    startAdminAccount(&admin);
 
     interfaceStartProgram();
 
-    startProgram(&startNodeUser);
+    startProgram(&startNodeUser, &admin);
     
     return 0;
 }
@@ -159,14 +170,35 @@ int confirmPassword(User *user) {
 
     char password[50];
 
-    printf(BLUE"\nDigite a senha da conta: "RESET);
-    scanf(" %[^\n]", password);
+    printf(BLUE"\nDigite a senha da conta: ");
+    scanf(" %[^\n]"RESET, password);
 
     if (strcmp(user->password, password) == 0) {
         return 1;
     }
 
     return 0;
+}
+
+void startAdminAccount(Admin *admin) {
+
+    clearTerminal();
+
+    printf(GREEN"===============================================================\n");
+    printf("||                     CADASTRO DO ADMIN                     ||\n");
+    printf("===============================================================\n"RESET);
+    
+    printf("\n\n");
+
+    printf(BLUE"Digite o seu login: ");
+    scanf(" %[^\n]", admin->login);
+
+    printf("\nDigite a sua senha: ");
+    scanf(" %[^\n]"RESET, admin->password);
+
+    printf(GREEN"\n\nConta admin criada com sucesso!\n\n"RESET);
+
+    waitingEnter();
 }
 
 void setAccountInformation(User **startNodeUsers, User *user) {
@@ -183,26 +215,26 @@ void setAccountInformation(User **startNodeUsers, User *user) {
     char login[50];
     char password[50];
 
-    printf(BLUE"Digite o seu nome: "RESET);
-    scanf(" %[^\n]", user->name);
+    printf(BLUE"Digite o seu nome: ");
+    scanf(" %[^\n]"RESET, user->name);
 
     printf("\n");
 
-    printf(BLUE"Digite o seu usuario de login: "RESET);
-    scanf(" %[^\n]", login);
+    printf(BLUE"Digite o seu usuario de login: ");
+    scanf(" %[^\n]"RESET, login);
 
     while (checkAvaliableLogin(startNodeUsers, login) == 0) {
         printf(RED"\nLogin nao disponivel. Por favor, digite outro login\n"RESET);
-        printf(BLUE"Digite o seu usuario de login: "RESET);
-        scanf(" %[^\n]", login);
+        printf(BLUE"Digite o seu usuario de login: ");
+        scanf(" %[^\n]"RESET, login);
     }
 
     printf("\n");
 
     strcpy(user->login, login);
 
-    printf(BLUE"Digite a sua senha: "RESET);
-    scanf(" %[^\n]", user->password);
+    printf(BLUE"Digite a sua senha: ");
+    scanf(" %[^\n]"RESET, user->password);
 
     user->money = 0.0;
     user->receiveTransfer = 0;
@@ -253,7 +285,7 @@ int checkAvaliableLogin(User **startNodeUsers, char login[]) {
     return 1;
 }
 
-void startProgram(User **startNodeUsers) {
+void startProgram(User **startNodeUsers, Admin *admin) {
 
     int escolha = 1;
     User *currentUser;
@@ -262,8 +294,8 @@ void startProgram(User **startNodeUsers) {
 
         interfaceMenuOptions();
 
-        printf(BLUE"\nDigite a sua escolha: "RESET);
-        scanf("%d", &escolha);
+        printf(BLUE"\nDigite a sua escolha: ");
+        scanf("%d"RESET, &escolha);
 
         switch(escolha) {
             case 1:
@@ -274,6 +306,11 @@ void startProgram(User **startNodeUsers) {
                 break;
             case 2:
                 insertUser(startNodeUsers);
+                break;
+            case 3:
+                if(loginAdmin(admin)) {
+                    choicesAdminOptions(admin, startNodeUsers);
+                }
                 break;
             case 0:
                 printf(GREEN"\n\nEncerrando o programa...\n\n"RESET);
@@ -286,6 +323,40 @@ void startProgram(User **startNodeUsers) {
     }
 }
 
+int loginAdmin(Admin *admin) {
+
+    clearTerminal();
+
+    printf(GREEN"========================================================\n");
+    printf("||                   LOGIN ADMIN                      ||\n");
+    printf("========================================================\n"RESET);
+
+    printf("\n\n");
+
+    char login[30];
+    char password[30];
+
+    printf(BLUE"Digite o seu login: ");
+    scanf(" %[^\n]"RESET, login);
+
+    printf(BLUE"Digite a sua senha: ");
+    scanf(" %[^\n]"RESET, password);
+
+    if (strcmp(admin->login, login) == 0) {
+
+        if(strcmp(admin->password, password) == 0) {
+            return 1;
+        }
+
+    }
+
+    printf(RED"\n\nAcesso negado.\n\n"RESET);
+    waitingEnter();
+
+    return 0;
+}
+
+
 void accountChoices(User **startNodeUsers , User *user) {
 
     int choice = 1;
@@ -294,8 +365,8 @@ void accountChoices(User **startNodeUsers , User *user) {
 
         interfaceMenuOptionsAccount(startNodeUsers, user);
 
-        printf(BLUE"\nDigite a sua escolha: "RESET);
-        scanf("%d", &choice);
+        printf(BLUE"\nDigite a sua escolha: ");
+        scanf("%d"RESET, &choice);
 
         switch(choice) {
             case 1:
@@ -357,8 +428,8 @@ User *accountLogin(User **startNodeUsers) {
     char login[30];
     char password[30];
 
-    printf(BLUE"Digite o seu usuario de login: "RESET);
-    scanf(" %[^\n]", login);
+    printf(BLUE"Digite o seu usuario de login: ");
+    scanf(" %[^\n]"RESET, login);
 
     User *currentUser = searchLoginUser(startNodeUsers, login);
 
@@ -395,13 +466,13 @@ void deposit(User *user) {
     
     double value;
 
-    printf(BLUE"Digite o valor do deposito: "RESET);
-    scanf("%lf", &value);
+    printf(BLUE"Digite o valor do deposito: ");
+    scanf("%lf"RESET, &value);
 
     while (value < 0.0) {
         printf(RED"\n\nValor de deposito invalido. Digite um positivo.\n\n"RESET);
-        printf(BLUE"Digite o valor do deposito: "RESET);
-        scanf("%lf", &value);
+        printf(BLUE"Digite o valor do deposito: ");
+        scanf("%lf"RESET, &value);
     }
 
     user->money += value;
@@ -413,7 +484,7 @@ void deposit(User *user) {
     currentRegister->value = value;
 
     printf(GREEN"\n\nDeposito de R$%.2lf realizado com sucesso!!\n\n"RESET, value);
-    printf(GREEN"Saldo da conta: R$%.2lf\n", user->money);
+    printf(GREEN"Saldo da conta: R$%.2lf\n"RESET, user->money);
 
     waitingEnter();
 }
@@ -430,13 +501,13 @@ void getMoney(User *user) {
 
     printf("\n\n");
 
-    printf(BLUE"Digite o valor do saque: "RESET);
-    scanf("%lf", &value);
+    printf(BLUE"Digite o valor do saque: ");
+    scanf("%lf"RESET, &value);
 
     while (value < 0.0) {
         printf(RED"\n\nValor invalido. Digite um valor positivo.\n\n"RESET);
-        printf(BLUE"Digite o valor do saque: "RESET);
-        scanf("%lf", &value);
+        printf(BLUE"Digite o valor do saque: ");
+        scanf("%lf"RESET, &value);
     }
 
     if (user->money < value) {
@@ -453,7 +524,7 @@ void getMoney(User *user) {
         currentRegister->value = -value;
 
         printf(GREEN"\n\nSaque de R$%.2lf realizado com sucesso!!\n\n", value);
-        printf(GREEN"Saldo da conta: R$%.2lf\n", user->money);
+        printf(GREEN"Saldo da conta: R$%.2lf\n"RESET, user->money);
     }
 
     waitingEnter();
@@ -502,8 +573,8 @@ void transfer(User **startNodeUsers, User *user) {
     char choice;
     double value;
 
-    printf(BLUE"Digite o ID da conta a ser transferido o valor: "RESET);
-    scanf("%d", &ID);
+    printf(BLUE"Digite o ID da conta a ser transferido o valor: ");
+    scanf("%d"RESET, &ID);
 
     User *accountForMoneyTransfer = searchID(startNodeUsers, ID);
 
@@ -511,19 +582,19 @@ void transfer(User **startNodeUsers, User *user) {
 
         checkAccountData(accountForMoneyTransfer);
 
-        printf(BLUE"\n\nDeseja transferir para essa conta[S/N]? "RESET);
-        scanf(" %c", &choice);
+        printf(BLUE"\n\nDeseja transferir para essa conta[S/N]? ");
+        scanf(" %c"RESET, &choice);
 
         if (toupper(choice) == 'S') {
             
             printf(GREEN"\nSeu saldo atual: R$%.2lf\n\n"RESET, user->money);
-            printf(BLUE"Digite o valor da transferencia: "RESET);
-            scanf("%lf", &value);
+            printf(BLUE"Digite o valor da transferencia: ");
+            scanf("%lf"RESET, &value);
 
             while ((value < 0.0) || (checkAvaliableValue(user, value) == 0)) {
                 printf(RED"\n\nValor invalido. Digite um valor positivo e disponivel na conta.\n\n"RESET);
-                printf(BLUE"Digite o valor da transferencia: "RESET);
-                scanf("%lf", &value);
+                printf(BLUE"Digite o valor da transferencia: ");
+                scanf("%lf"RESET, &value);
             }
 
             Registro *currentRegister = searchNewRegister(user);
@@ -629,7 +700,7 @@ void showRegistersAccount(User *user) {
     printf("============================================================================================================\n\n\n"RESET);
 
     if (user->registro[0].value == 0.0) {
-        printf(RED"Nenhuma atividade registrada ainda.\n\n");
+        printf(RED"Nenhuma atividade registrada ainda.\n\n"RESET);
         waitingEnter();
     }
     else {
@@ -645,6 +716,140 @@ void showRegistersAccount(User *user) {
 
         printf(RESET);
         
+        waitingEnter();
+    }
+}
+
+void choicesAdminOptions(Admin *admin, User **startNodeUsers) {
+
+    int choice = 1;
+    User *user;
+
+    while (choice != 0) {
+
+        interfaceAdminOptions();
+
+        printf(BLUE"\nDigite a sua escolha: ");
+        scanf("%d"RESET, &choice);
+
+        switch(choice) {
+            case 1:
+                showMoneyInTheBank(startNodeUsers);
+                break;
+            case 2:
+                showQuantityUsers(startNodeUsers);
+                break;
+            case 3:
+                user = getIdAccount(startNodeUsers);
+                showAccountDetailsAdmin(user);
+                break;
+            case 0:
+                printf(GREEN"\n\nSaindo da conta...\n\n"RESET);
+                waitingEnter();
+                break;
+            default:
+                printf(RED"\n\nEscolha invalida.\n\n"RESET);
+                waitingEnter();
+                break;
+        }
+    }
+}
+
+void showMoneyInTheBank(User **startNodeUsers) {
+
+    clearTerminal();
+
+    User *startNode = *startNodeUsers;
+
+    double totalBalance = calcTotalMoney(startNode);
+
+    printf(GREEN"=================================================\n");
+    printf("||           TOTAL DE DINHEIRO NO BANCO        ||\n");
+    printf("=================================================\n"RESET);
+
+    printf("\n\n");
+
+    printf(GREEN"O total de dinheiro no banco e: R$%.2lf\n\n"RESET, totalBalance);
+
+    waitingEnter();
+}
+
+void showQuantityUsers(User **startNodeUsers) {
+
+    clearTerminal();
+
+    int quantity = calcQuantityUsers(startNodeUsers);
+
+    printf(GREEN"=========================================================\n");
+    printf("||               QUANTIDADE DE USUARIOS ATIVOS         ||\n");
+    printf("=========================================================\n"RESET);
+
+    printf("\n\n");
+
+    printf(GREEN"A quantidade de usuarios ativos do banco e: %d\n\n"RESET, quantity);
+
+    waitingEnter();
+}
+
+int calcQuantityUsers(User **startNodeUsers) {
+
+    User *startNode = *startNodeUsers;
+    int quantity = 0;
+
+    while (startNode != NULL) {
+        quantity++;
+        startNode = startNode->nextUser;
+    }
+
+    return quantity;
+}
+
+User *getIdAccount(User **startNodeUsers) {
+
+    clearTerminal();
+
+    printf("==============================================================\n");
+    printf("||                      PESQUISAR CONTA                     ||\n");
+    printf("==============================================================\n");
+
+    printf("\n\n");
+
+    int ID;
+
+    printf(BLUE"Digite o ID da conta a ser pesquisada: ");
+    scanf("%d"RESET, &ID);
+
+    User *startNode = *startNodeUsers;
+    User *currentUser = searchAccount(startNode, ID);
+
+    return currentUser;
+}
+
+void showAccountDetailsAdmin(User *user) {
+
+    clearTerminal();
+
+    printf(GREEN"===============================================================\n");
+    printf("||                      DETALHES DA CONTA                    ||\n");
+    printf("===============================================================\n"RESET);
+
+    printf("\n\n");
+
+    if(user == NULL) {
+        printf(RED"A conta com o ID informado nao existe.\n\n"RESET);
+        waitingEnter();
+    }
+    else {
+
+        printf("============================================================\n");
+        printf("||                        CONTA                           ||\n");
+        printf("============================================================\n");
+        printf("|| Nome: %-10s                                            ||\n", user->name);
+        printf("|| ID: %d                                                 ||\n", user->ID);
+        printf("|| Dinheiro: %.2lf                                        ||\n", user->money);
+        printf("|| Login: %-10s                                           ||\n", user->login);
+        printf("============================================================\n"RESET);
+
         waitingEnter();
     }
 }
@@ -680,17 +885,17 @@ void interfaceStartProgram(void) {
 
     clearTerminal();
 
-    printf(GREEN"$$$$$$$\\  $$\\   $$\\ $$\\       $$\\       $$$$$$$$\\ $$$$$$$$\\       $$$$$$$\\   $$$$$$\\  $$\\   $$\\ $$\\   $$\\ \n");
-    printf("$$  __$$\\ $$ |  $$ |$$ |      $$ |      $$  _____|\\__$$  __|      $$  __$$\\ $$  __$$\\ $$$\\  $$ |$$ | $$  |\n");
-    printf("$$ |  $$ |$$ |  $$ |$$ |      $$ |      $$ |         $$ |         $$ |  $$ |$$ /  $$ |$$$$\\ $$ |$$ |$$  / \n");
-    printf("$$$$$$$\\ |$$ |  $$ |$$ |      $$ |      $$$$$\\       $$ |         $$$$$$$\\ |$$$$$$$$ |$$ $$\\$$ |$$$$$  /  \n");
-    printf("$$  __$$\\ $$ |  $$ |$$ |      $$ |      $$  __|      $$ |         $$  __$$\\ $$  __$$ |$$ \\$$$$ |$$  $$<   \n");
-    printf("$$ |  $$ |$$ |  $$ |$$ |      $$ |      $$ |         $$ |         $$ |  $$ |$$ |  $$ |$$ |\\$$$ |$$ |\\$$\\  \n");
-    printf("$$$$$$$  |\\$$$$$$  |$$$$$$$$\\ $$$$$$$\\ $$$$$$$\\      $$ |         $$$$$$$  |$$ |  $$ |$$ | \\$$ |$$ | \\$$\\ \n");
-    printf("\\_______/  \\______/ \\________|\\________|\\________|   \\__|         \\_______/ \\__|  \\__|\\__|  \\__|\\__|  \\__|\n"RESET);
+    printf(GREEN" /$$$$$$$                            /$$                               /$$$$$$$                      /$$      \n");
+    printf("| $$__  $$                          | $$                              | $$__  $$                    | $$      \n");
+    printf("| $$  \\ $$  /$$$$$$  /$$$$$$$   /$$$$$$$  /$$$$$$  /$$$$$$/$$$$       | $$  \\ $$  /$$$$$$  /$$$$$$$ | $$   /$$\n");
+    printf("| $$$$$$$/ |____  $$| $$__  $$ /$$__  $$ /$$__  $$| $$_  $$_  $$      | $$$$$$$  |____  $$| $$__  $$| $$  /$$/\n");
+    printf("| $$__  $$  /$$$$$$$| $$  \\ $$| $$  | $$| $$  \\ $$| $$ \\ $$ \\ $$      | $$__  $$  /$$$$$$$| $$  \\ $$| $$$$$$/ \n");
+    printf("| $$  \\ $$ /$$__  $$| $$  | $$| $$  | $$| $$  | $$| $$ | $$ | $$      | $$  \\ $$ /$$__  $$| $$  | $$| $$_  $$ \n");
+    printf("| $$  | $$|  $$$$$$$| $$  | $$|  $$$$$$$|  $$$$$$/| $$ | $$ | $$      | $$$$$$$/|  $$$$$$$| $$  | $$| $$ \\  $$\n");
+    printf("|__/  |__/ \\_______/|__/  |__/ \\_______/ \\______/ |__/ |__/ |__/      |_______/  \\_______/|__/  |__/|__/  \\__/\n"RESET);
 
     printf(GREEN"\n\nBem-vindo ao nosso banco!\n\n"RESET);
-    waitingEnter();
+    getchar();
 }
 
 void interfaceMenuOptions(void) {
@@ -721,6 +926,20 @@ void interfaceMenuOptionsAccount(User **startNodeUsers, User *user) {
     printf("|| [5] Historico da conta                   ||\n");
     printf("|| [6] Excluir conta                        ||\n");
     printf("|| [0] Sair da conta                        ||\n");
+    printf("==============================================\n"RESET);
+}
+
+void interfaceAdminOptions() {
+
+    clearTerminal();
+
+    printf(GREEN"==============================================\n");
+    printf("||               MENU DE OPCOES             ||\n");
+    printf("==============================================\n");
+    printf("|| [1] Dinheiro no banco                    ||\n");
+    printf("|| [2] Quantidade de usuarios               ||\n");
+    printf("|| [3] Pesquisar conta                      ||\n");
+    printf("|| [0] Sair                                 ||\n");
     printf("==============================================\n"RESET);
 }
 
