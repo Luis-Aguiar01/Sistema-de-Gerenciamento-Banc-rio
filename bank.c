@@ -10,7 +10,8 @@
 #define GOLDEN "\033[1;38;5;220m"
 
 typedef struct registro {
-    char name[50];
+    char from[50];
+    char to[50];
     double value;
     char type[50];
 } Registro;
@@ -21,7 +22,6 @@ typedef struct user {
     char password[30];
     double money;
     int ID;
-    char *history[30];
     int receiveTransfer;
     struct registro registro[30];
     struct user *nextUser;
@@ -31,6 +31,8 @@ typedef struct user {
 typedef struct bank {
     double totalMoney;
     int totalUsers;
+    void (*calcTotalUsers)(User **startNodeUsers);
+    void (*calcTotalMoney)(User **startNodeUsers);
 } Bank;
 
 void insertUser(User **startNodeUsers);
@@ -63,13 +65,13 @@ void showRegistersAccount(User *user);
 int main(void) {
 
     User *startNodeUser = NULL;
+    Bank bankInformation;
 
     interfaceStartProgram();
 
     startProgram(&startNodeUser);
     
-    
-
+    return 0;
 }
 
 void insertUser(User **startNodeUsers) {
@@ -205,6 +207,13 @@ void setAccountInformation(User **startNodeUsers, User *user) {
     user->money = 0.0;
     user->receiveTransfer = 0;
 
+    for (int i = 0; i < 30; i++) {
+        strcpy(user->registro[i].from, "");
+        strcpy(user->registro[i].to, "");
+        strcpy(user->registro[i].type, "");
+        user->registro[i].value = 0.0;
+    }
+
     showAccountDetails(user);
 
     printf(GREEN"\n\nConta criada com sucesso!\n\n"RESET);
@@ -319,7 +328,6 @@ void accountChoices(User **startNodeUsers , User *user) {
     }
 }
 
-
 User *searchLoginUser(User **startNodeUsers, char login[]) {
 
     User *currentUser = *startNodeUsers;
@@ -379,13 +387,13 @@ void deposit(User *user) {
 
     clearTerminal();
 
-    double value;
-
     printf(GREEN"======================================================\n");
     printf("||                   AREA DE DEPOSITO               ||\n");
     printf("======================================================\n"RESET);
 
-    printf("\n\n");
+    printf("\n\n"); 
+    
+    double value;
 
     printf(BLUE"Digite o valor do deposito: "RESET);
     scanf("%lf", &value);
@@ -399,7 +407,8 @@ void deposit(User *user) {
     user->money += value;
     Registro *currentRegister = searchNewRegister(user);
 
-    strcpy(currentRegister->name, "Voce");
+    strcpy(currentRegister->from, "Voce");
+    strcpy(currentRegister->to, "Voce");
     strcpy(currentRegister->type, "Deposito");
     currentRegister->value = value;
 
@@ -438,7 +447,8 @@ void getMoney(User *user) {
 
         Registro *currentRegister = searchNewRegister(user);
 
-        strcpy(currentRegister->name, "Voce");
+        strcpy(currentRegister->from, "Voce");
+        strcpy(currentRegister->to, "Voce");
         strcpy(currentRegister->type, "Saque");
         currentRegister->value = -value;
 
@@ -497,37 +507,53 @@ void transfer(User **startNodeUsers, User *user) {
 
     User *accountForMoneyTransfer = searchID(startNodeUsers, ID);
 
-    checkAccountData(accountForMoneyTransfer);
+    if (accountForMoneyTransfer != NULL) {
 
-    printf(BLUE"\n\nDeseja transferir para essa conta[S/N]? "RESET);
-    scanf(" %c", &choice);
+        checkAccountData(accountForMoneyTransfer);
 
-    if (toupper(choice) == 'S') {
-        
-        printf(GREEN"\nSeu saldo atual: R$%.2lf\n\n"RESET, user->money);
-        printf(BLUE"Digite o valor da transferencia: "RESET);
-        scanf("%lf", &value);
+        printf(BLUE"\n\nDeseja transferir para essa conta[S/N]? "RESET);
+        scanf(" %c", &choice);
 
-        while ((value < 0.0) || (checkAvaliableValue(user, value) == 0)) {
-            printf(RED"\n\nValor invalido. Digite um valor positivo e disponivel na conta.\n\n"RESET);
+        if (toupper(choice) == 'S') {
+            
+            printf(GREEN"\nSeu saldo atual: R$%.2lf\n\n"RESET, user->money);
             printf(BLUE"Digite o valor da transferencia: "RESET);
             scanf("%lf", &value);
+
+            while ((value < 0.0) || (checkAvaliableValue(user, value) == 0)) {
+                printf(RED"\n\nValor invalido. Digite um valor positivo e disponivel na conta.\n\n"RESET);
+                printf(BLUE"Digite o valor da transferencia: "RESET);
+                scanf("%lf", &value);
+            }
+
+            Registro *currentRegister = searchNewRegister(user);
+            Registro *currentRegisterTransfer = searchNewRegister(accountForMoneyTransfer);
+
+            strcpy(currentRegister->from, "Voce");
+            strcpy(currentRegister->to, accountForMoneyTransfer->name);
+            strcpy(currentRegister->type, "Transferencia");
+            currentRegister->value = -value;
+
+            strcpy(currentRegisterTransfer->from, user->name);
+            strcpy(currentRegisterTransfer->to, "Voce");
+            strcpy(currentRegisterTransfer->type, "Transferencia");
+            currentRegisterTransfer->value = value;
+
+            accountForMoneyTransfer->money += value;
+            user->money -= value;
+            accountForMoneyTransfer->receiveTransfer++;
+
+            printReceipt(user, accountForMoneyTransfer, value);
+
+            printf(GREEN"\n\nTransferencia realizada com sucesso!\n\n"RESET);
+            printf(GREEN"Saldo atual: R$%.2lf\n"RESET, user->money);
+            
+            waitingEnter();
         }
-
-        accountForMoneyTransfer->money += value;
-        user->money -= value;
-        accountForMoneyTransfer->receiveTransfer++;
-
-        printReceipt(user, accountForMoneyTransfer, value);
-
-        printf(GREEN"\n\nTransferencia realizada com sucesso!\n\n"RESET);
-        printf(GREEN"Saldo atual: R$%.2lf\n"RESET, user->money);
-        
-        waitingEnter();
-    }
-    else {
-        printf(RED"\n\nTransferencia cancelada.\n\n"RESET);
-        waitingEnter();
+        else {
+            printf(RED"\n\nTransferencia cancelada.\n\n"RESET);
+            waitingEnter();
+        }
     }
 }
 
@@ -598,23 +624,23 @@ void showRegistersAccount(User *user) {
     
     clearTerminal();
 
-    printf(GREEN"=======================================================================================\n");
-    printf("||                           AREA DE ATIVIDADE DA CONTA                              ||\n");
-    printf("=======================================================================================\n\n\n"RESET);
+    printf(GREEN"============================================================================================================\n");
+    printf("||                                     AREA DE ATIVIDADE DA CONTA                                      ||\n");
+    printf("============================================================================================================\n\n\n"RESET);
 
     if (user->registro[0].value == 0.0) {
         printf(RED"Nenhuma atividade registrada ainda.\n\n");
         waitingEnter();
     }
     else {
-        printf(GREEN"=======================================================================================\n");
-        printf("|            Nome           |             Tipo              |           Valor         |\n");
-        printf("=======================================================================================\n\n");
+        printf(BLUE"============================================================================================================\n");
+        printf("|           DE              |          PARA           |             Tipo            |         Valor        |\n");
+        printf("============================================================================================================\n\n");
 
         for (int i = 0; user->registro[i].value != 0.0; i++) {
-            printf("---------------------------------------------------------------------------------------\n");
-            printf("|     %-15s       |         %-15s       |          R$%-7.2lf      |\n", user->registro[i].name, user->registro[i].type, user->registro[i].value);
-            printf("---------------------------------------------------------------------------------------\n\n");
+            printf("------------------------------------------------------------------------------------------------------------\n");
+            printf("|          %-10s       |          %-10s     |        %-13s        |       R$%-7.2lf      |\n", user->registro[i].from, user->registro[i].to ,user->registro[i].type, user->registro[i].value);
+            printf("------------------------------------------------------------------------------------------------------------\n\n");
         }
 
         printf(RESET);
@@ -622,6 +648,31 @@ void showRegistersAccount(User *user) {
         waitingEnter();
     }
 }
+
+// ========================================== RECURSÃO ============================================== //
+
+double calcTotalMoney(User *user) {
+    if (user == NULL ) {
+        return 0.0;
+    }
+    else {
+        return user->money + calcTotalMoney(user->nextUser);
+    }
+}
+
+User *searchAccount(User *user, int ID) {
+    
+    if (user == NULL) {
+        return NULL;
+    }
+    else if (user->ID == ID) {
+        return user;
+    }
+    else {
+        return searchAccount(user->nextUser, ID);
+    }
+}
+
 
 // ========================================== INTERFACE ============================================== //
 
@@ -651,6 +702,7 @@ void interfaceMenuOptions(void) {
     printf("==============================================\n");
     printf("|| [1] Login                                ||\n");
     printf("|| [2] Cadastrar                            ||\n");
+    printf("|| [3] Informacoes do banco                 ||\n");
     printf("|| [0] Sair                                 ||\n");
     printf("==============================================\n"RESET);
 }
