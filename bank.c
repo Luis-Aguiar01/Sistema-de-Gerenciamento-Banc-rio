@@ -70,6 +70,9 @@ void showAccountDetailsAdmin(User *user);
 void showQuantityUsers(User **startNodeUsers);
 double calcTotalMoney(User *user);
 User *searchAccount(User *user, int ID);
+void payBill(User *user);
+void printPayment(Registro *registro);
+void interfaceDeleteAccount();
 
 int main(void) {
 
@@ -97,12 +100,11 @@ void insertUser(User **startNodeUsers) {
     }
 
     currentNodeUser = *startNodeUsers;
-
+    
     if (currentNodeUser == NULL) {
         *startNodeUsers = newNodeUser;
         newNodeUser->nextUser = NULL;
         newNodeUser->previousUser = NULL;
-        newNodeUser->ID = 1;
     }
     else {
 
@@ -114,13 +116,14 @@ void insertUser(User **startNodeUsers) {
         currentNodeUser->nextUser = newNodeUser;
         newNodeUser->previousUser = currentNodeUser;
         newNodeUser->nextUser = NULL;
-        newNodeUser->ID = newNodeUser->previousUser->ID + 1;
     }
     
     setAccountInformation(startNodeUsers, newNodeUser);
 }
 
 void deleteUser(User **startNodeUsers, char login[]) {
+
+    interfaceDeleteAccount();
 
     User *currentNodeUser = NULL;
     User *previousNodeUser = NULL;
@@ -143,24 +146,27 @@ void deleteUser(User **startNodeUsers, char login[]) {
             if (previousNodeUser == NULL) {
                 
                 if (currentNodeUser->nextUser == NULL) {
+                    strcpy(currentNodeUser->login, "");
                     free(currentNodeUser);
                     *startNodeUsers = NULL;
                 }
                 else {
                     *startNodeUsers = currentNodeUser->nextUser;
+                    strcpy(currentNodeUser->login, "");
                     free(currentNodeUser);
                 }
             }
             else {
                 previousNodeUser->nextUser = currentNodeUser->nextUser;
+                strcpy(currentNodeUser->login, "");
                 free(currentNodeUser);
             }
             
-            printf(GREEN"\nA sua conta foi deletada.\n"RESET);
+            printf(GREEN"\n\nA sua conta foi deletada.\n\n"RESET);
             waitingEnter();
         }
         else {
-            printf(RED"\nVoce nao tem permissao para deletar esta conta.\n"RESET);
+            printf(RED"\n\nVoce nao tem permissao para deletar esta conta.\n\n"RESET);
             waitingEnter();
         }
     }
@@ -224,7 +230,7 @@ void setAccountInformation(User **startNodeUsers, User *user) {
     scanf(" %[^\n]"RESET, login);
 
     while (checkAvaliableLogin(startNodeUsers, login) == 0) {
-        printf(RED"\nLogin nao disponivel. Por favor, digite outro login\n"RESET);
+        printf(RED"\n\nLogin nao disponivel. Por favor, digite outro login\n\n"RESET);
         printf(BLUE"Digite o seu usuario de login: ");
         scanf(" %[^\n]"RESET, login);
     }
@@ -244,6 +250,13 @@ void setAccountInformation(User **startNodeUsers, User *user) {
         strcpy(user->registro[i].to, "");
         strcpy(user->registro[i].type, "");
         user->registro[i].value = 0.0;
+    }
+
+    if (user->previousUser == NULL) {
+        user->ID = 1;
+    }
+    else {
+        user->ID = user->previousUser->ID + 1;
     }
 
     showAccountDetails(user);
@@ -339,7 +352,7 @@ int loginAdmin(Admin *admin) {
     printf(BLUE"Digite o seu login: ");
     scanf(" %[^\n]"RESET, login);
 
-    printf(BLUE"Digite a sua senha: ");
+    printf(BLUE"\nDigite a sua senha: ");
     scanf(" %[^\n]"RESET, password);
 
     if (strcmp(admin->login, login) == 0) {
@@ -385,6 +398,9 @@ void accountChoices(User **startNodeUsers , User *user) {
                 showRegistersAccount(user);
                 break;
             case 6:
+                payBill(user);
+                break;
+            case 7:
                 deleteUser(startNodeUsers, user->login);
                 choice = 0;
                 break;
@@ -413,6 +429,44 @@ User *searchLoginUser(User **startNodeUsers, char login[]) {
     }
 
     return NULL;
+}
+
+void payBill(User *user) {
+
+    clearTerminal();
+
+    printf(GREEN"================================================================\n");
+    printf("||                     AREA DE PAGAMENTO                      ||\n");
+    printf("================================================================\n"RESET);
+
+    printf("\n\n");
+
+    double price;
+    Registro *currentRegister = searchNewRegister(user);
+
+    printf(GREEN"Saldo atual: %.2lf\n\n"RESET, user->money);
+
+    printf(BLUE"\nDigite o preco da conta: ");
+    scanf("%lf"RESET, &price);
+
+    while (price > user->money || price <= 0) {
+        printf(RED"\n\nSaldo insuficiente ou valor invalido.\n\n"RESET);
+        printf(BLUE"\nDigite o preco da conta: ");
+        scanf("%lf"RESET, &price);
+    } 
+    
+    printf(BLUE"\nDigite para quem sera feito o pagamento: ");
+    scanf(" %[^\n]"RESET, currentRegister->to);
+    
+    strcpy(currentRegister->from, "Voce");
+    strcpy(currentRegister->type, "Pagamento");
+    currentRegister->value = -price;
+    user->money -= price;
+
+    printPayment(currentRegister);
+
+    printf(GREEN"\n\nConta paga com sucesso!\n\n"RESET);
+    waitingEnter();
 }
 
 User *accountLogin(User **startNodeUsers) {
@@ -576,6 +630,12 @@ void transfer(User **startNodeUsers, User *user) {
     printf(BLUE"Digite o ID da conta a ser transferido o valor: ");
     scanf("%d"RESET, &ID);
 
+    while (user->ID == ID) {
+        printf(RED"\n\nVoce nao pode realizar uma transferencia para o seu ID.\n\n"RESET);
+        printf(BLUE"\nDigite o ID da conta a ser transferido o valor: ");
+        scanf("%d"RESET, &ID);
+    }
+
     User *accountForMoneyTransfer = searchID(startNodeUsers, ID);
 
     if (accountForMoneyTransfer != NULL) {
@@ -670,6 +730,19 @@ void printReceipt(User *user, User *account, double value) {
     printf("======================================================================\n"RESET);
 }
 
+void printPayment(Registro *registro) {
+
+    clearTerminal();
+
+    printf(GREEN"======================================================================\n");
+    printf("||                 PAGAMENTO EFETUADO COM SUCESSO!                  ||\n");
+    printf("======================================================================\n");
+    printf("|| De: %-21s                                        ||\n", registro->from);
+    printf("|| Enviado para: %-15s                                    ||\n", registro->to);
+    printf("|| Valor: R$%-10.2lf                                              ||\n", -registro->value);
+    printf("======================================================================\n"RESET);
+}
+
 int checkAvaliableValue(User *user, double value) {
 
     if (user->money >= value) {
@@ -704,7 +777,7 @@ void showRegistersAccount(User *user) {
         waitingEnter();
     }
     else {
-        printf(BLUE"============================================================================================================\n");
+        printf(GREEN"============================================================================================================\n");
         printf("|           DE              |          PARA           |             Tipo            |         Valor        |\n");
         printf("============================================================================================================\n\n");
 
@@ -898,6 +971,18 @@ void interfaceStartProgram(void) {
     getchar();
 }
 
+void interfaceDeleteAccount() {
+
+    clearTerminal();
+
+    printf(GREEN"=====================================================\n");
+    printf("||             AREA DE EXCLUSAO DA CONTA           ||\n");
+    printf("=====================================================\n"RESET);
+
+    printf("\n\n");
+
+}
+
 void interfaceMenuOptions(void) {
 
     clearTerminal();
@@ -924,7 +1009,8 @@ void interfaceMenuOptionsAccount(User **startNodeUsers, User *user) {
     printf("|| [3] Transferir                           ||\n");
     printf("|| [4] Consultar dados da conta             ||\n");
     printf("|| [5] Historico da conta                   ||\n");
-    printf("|| [6] Excluir conta                        ||\n");
+    printf("|| [6] Pagar conta                          ||\n");
+    printf("|| [7] Excluir conta                        ||\n");
     printf("|| [0] Sair da conta                        ||\n");
     printf("==============================================\n"RESET);
 }
