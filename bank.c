@@ -783,7 +783,7 @@ void showRegistersAccount(User *user) {
     clearTerminal();
 
     printf(GREEN"============================================================================================================\n");
-    printf("||                                     AREA DE ATIVIDADE DA CONTA                                      ||\n");
+    printf("||                                     AREA DE ATIVIDADE DA CONTA                                         ||\n");
     printf("============================================================================================================\n\n\n"RESET);
 
     if (user->registro[0].value == 0.0) {
@@ -895,9 +895,9 @@ User *getIdAccount(User **startNodeUsers) {
 
     clearTerminal();
 
-    printf("==============================================================\n");
+    printf(GREEN"==============================================================\n");
     printf("||                      PESQUISAR CONTA                     ||\n");
-    printf("==============================================================\n");
+    printf("==============================================================\n"RESET);
 
     printf("\n\n");
 
@@ -916,9 +916,9 @@ void showAccountDetailsAdmin(User *user) {
 
     clearTerminal();
 
-    printf(GREEN"===============================================================\n");
-    printf("||                      DETALHES DA CONTA                    ||\n");
-    printf("===============================================================\n"RESET);
+    printf(GREEN"======================================================================\n");
+    printf("||                          DETALHES DA CONTA                       ||\n");
+    printf("======================================================================\n"RESET);
 
     printf("\n\n");
 
@@ -928,14 +928,14 @@ void showAccountDetailsAdmin(User *user) {
     }
     else {
 
-        printf("============================================================\n");
-        printf("||                        CONTA                           ||\n");
-        printf("============================================================\n");
-        printf("|| Nome: %-10s                                            ||\n", user->name);
-        printf("|| ID: %d                                                 ||\n", user->ID);
-        printf("|| Dinheiro: %.2lf                                        ||\n", user->money);
-        printf("|| Login: %-10s                                           ||\n", user->login);
-        printf("============================================================\n"RESET);
+        printf(GREEN"======================================================================\n");
+        printf("||                                 CONTA                            ||\n");
+        printf("======================================================================\n");
+        printf("|| Nome: %-15s                                            ||\n", user->name);
+        printf("|| ID: %d                                                            ||\n", user->ID);
+        printf("|| Dinheiro: %-10.2lf                                             ||\n", user->money);
+        printf("|| Login: %-15s                                           ||\n", user->login);
+        printf("======================================================================\n"RESET);
 
         waitingEnter();
     }
