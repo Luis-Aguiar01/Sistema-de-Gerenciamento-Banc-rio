@@ -256,7 +256,21 @@ void setAccountInformation(User **startNodeUsers, User *user) {
         user->ID = 1;
     }
     else {
-        user->ID = user->previousUser->ID + 1;
+
+        User *currentNode = *startNodeUsers;
+        
+        while (currentNode != NULL) {
+            if (currentNode->nextUser->ID - currentNode->ID != 1) {
+                user->ID = currentNode->ID + 1;
+                break;
+            }
+            currentNode = currentNode->nextUser;
+        }
+
+        if (currentNode == NULL) {
+            user->ID = user->previousUser->ID + 1;
+        }
+        
     }
 
     showAccountDetails(user);
