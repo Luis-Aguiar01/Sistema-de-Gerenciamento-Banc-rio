@@ -73,6 +73,10 @@ User *searchAccount(User *user, int ID);
 void payBill(User *user);
 void printPayment(Registro *registro);
 void interfaceDeleteAccount();
+void setName(User *user);
+void setPassword(User *user);
+void changeLogin(User **startNodeUsers, User *user);
+void resetData(User *user);
 
 int main(void) {
 
@@ -101,21 +105,40 @@ void insertUser(User **startNodeUsers) {
 
     currentNodeUser = *startNodeUsers;
     
-    if (currentNodeUser == NULL) {
-        *startNodeUsers = newNodeUser;
-        newNodeUser->nextUser = NULL;
+    if (currentNodeUser == NULL || currentNodeUser->ID > 1) {
+        newNodeUser->nextUser = *startNodeUsers;
         newNodeUser->previousUser = NULL;
+        newNodeUser->ID = 1;
+        
+        if (*startNodeUsers != NULL) {
+            (*startNodeUsers)->previousUser = newNodeUser;
+        }
+        
+        *startNodeUsers = newNodeUser;
     }
     else {
 
-        while (currentNodeUser->nextUser != NULL) {
+        while (currentNodeUser != NULL) {
             previousNodeUser = currentNodeUser;
             currentNodeUser = currentNodeUser->nextUser;
+
+            if ( (currentNodeUser != NULL) && (currentNodeUser->ID > previousNodeUser->ID + 1) ) {
+                newNodeUser->ID = previousNodeUser->ID + 1;
+                break;
+            }
         }
 
-        currentNodeUser->nextUser = newNodeUser;
-        newNodeUser->previousUser = currentNodeUser;
-        newNodeUser->nextUser = NULL;
+        if (currentNodeUser == NULL) {
+            newNodeUser->ID = previousNodeUser->ID + 1;
+            previousNodeUser->nextUser = newNodeUser;
+            newNodeUser->nextUser = NULL;
+            newNodeUser->previousUser = previousNodeUser;
+        }
+        else {
+            previousNodeUser->nextUser = newNodeUser;
+            newNodeUser->previousUser = previousNodeUser;
+            newNodeUser->nextUser = currentNodeUser;
+        }
     }
     
     setAccountInformation(startNodeUsers, newNodeUser);
@@ -130,7 +153,7 @@ void deleteUser(User **startNodeUsers, char login[]) {
 
     currentNodeUser= *startNodeUsers;
 
-    while (currentNodeUser->login != login && currentNodeUser != NULL) {
+    while (currentNodeUser != NULL && currentNodeUser->login != login) {
         previousNodeUser = currentNodeUser;
         currentNodeUser = currentNodeUser->nextUser;
     }
@@ -146,19 +169,19 @@ void deleteUser(User **startNodeUsers, char login[]) {
             if (previousNodeUser == NULL) {
                 
                 if (currentNodeUser->nextUser == NULL) {
-                    strcpy(currentNodeUser->login, "");
+                    resetData(currentNodeUser);
                     free(currentNodeUser);
                     *startNodeUsers = NULL;
                 }
                 else {
                     *startNodeUsers = currentNodeUser->nextUser;
-                    strcpy(currentNodeUser->login, "");
+                    resetData(currentNodeUser);
                     free(currentNodeUser);
                 }
             }
             else {
                 previousNodeUser->nextUser = currentNodeUser->nextUser;
-                strcpy(currentNodeUser->login, "");
+                resetData(currentNodeUser);
                 free(currentNodeUser);
             }
             
@@ -250,27 +273,6 @@ void setAccountInformation(User **startNodeUsers, User *user) {
         strcpy(user->registro[i].to, "");
         strcpy(user->registro[i].type, "");
         user->registro[i].value = 0.0;
-    }
-
-    if (user->previousUser == NULL) {
-        user->ID = 1;
-    }
-    else {
-
-        User *currentNode = *startNodeUsers;
-        
-        while (currentNode != NULL) {
-            if (currentNode->nextUser->ID - currentNode->ID != 1) {
-                user->ID = currentNode->ID + 1;
-                break;
-            }
-            currentNode = currentNode->nextUser;
-        }
-
-        if (currentNode == NULL) {
-            user->ID = user->previousUser->ID + 1;
-        }
-        
     }
 
     showAccountDetails(user);
@@ -418,6 +420,15 @@ void accountChoices(User **startNodeUsers , User *user) {
                 deleteUser(startNodeUsers, user->login);
                 choice = 0;
                 break;
+            case 8:
+                setPassword(user);
+                break;
+            case 9:
+                setName(user);
+                break;
+            case 10:
+                changeLogin(startNodeUsers, user);
+                break;
             case 0:
                 choice = 0;
                 break;
@@ -537,7 +548,7 @@ void deposit(User *user) {
     printf(BLUE"Digite o valor do deposito: ");
     scanf("%lf"RESET, &value);
 
-    while (value < 0.0) {
+    while (value <= 0.0) {
         printf(RED"\n\nValor de deposito invalido. Digite um positivo.\n\n"RESET);
         printf(BLUE"Digite o valor do deposito: ");
         scanf("%lf"RESET, &value);
@@ -572,7 +583,7 @@ void getMoney(User *user) {
     printf(BLUE"Digite o valor do saque: ");
     scanf("%lf"RESET, &value);
 
-    while (value < 0.0) {
+    while (value <= 0.0) {
         printf(RED"\n\nValor invalido. Digite um valor positivo.\n\n"RESET);
         printf(BLUE"Digite o valor do saque: ");
         scanf("%lf"RESET, &value);
@@ -665,7 +676,7 @@ void transfer(User **startNodeUsers, User *user) {
             printf(BLUE"Digite o valor da transferencia: ");
             scanf("%lf"RESET, &value);
 
-            while ((value < 0.0) || (checkAvaliableValue(user, value) == 0)) {
+            while ((value <= 0.0) || (checkAvaliableValue(user, value) == 0)) {
                 printf(RED"\n\nValor invalido. Digite um valor positivo e disponivel na conta.\n\n"RESET);
                 printf(BLUE"Digite o valor da transferencia: ");
                 scanf("%lf"RESET, &value);
@@ -891,6 +902,86 @@ int calcQuantityUsers(User **startNodeUsers) {
     return quantity;
 }
 
+void setPassword(User *user) {
+
+    clearTerminal();
+
+    printf(GREEN"========================================================\n");
+    printf("||              AREA DE MUDANCA DE SENHA              ||\n");
+    printf("========================================================\n"RESET);
+
+    printf("\n\n");
+
+    printf(GREEN"Antes de alterar alterar a senha, insira a senha atual.\n\n"RESET);
+
+    if (confirmPassword(user)) {
+
+        printf(BLUE"\nDigite a nova senha: ");
+        scanf(" %[^\n]"RESET, user->password);
+
+        printf(GREEN"\n\nSenha alterada com sucesso!\n\n"RESET);
+
+    }
+    else {
+        printf(RED"\n\nSenha incorreta.\n\n"RESET);
+    }
+
+    waitingEnter();
+}
+
+void setName(User *user) {
+
+    clearTerminal();
+
+    printf(GREEN"========================================================\n");
+    printf("||              AREA DE MUDANCA DE NOME               ||\n");
+    printf("========================================================\n"RESET);
+
+    printf("\n\n");
+
+    printf(BLUE"Digite o novo nome: ");
+    scanf(" %[^\n]"RESET, user->name);
+
+    printf(GREEN"\n\nNome alterado com sucesso! O seu nome e: %s\n\n"RESET, user->name);
+}
+
+void changeLogin(User **startNodeUsers, User *user) {
+
+    clearTerminal();
+
+    printf(GREEN"========================================================\n");
+    printf("||              AREA DE MUDANCA DE LOGIN              ||\n");
+    printf("========================================================\n"RESET);
+
+    printf("\n\n");
+
+    char login[50];
+
+    printf(BLUE"Digite o novo login: ");
+    scanf(" %[^\n]"RESET, login);
+
+    while (checkAvaliableLogin(startNodeUsers, login) == 0) {
+        printf(RED"\n\nLogin nao disponivel. Digite um novo login.\n\n");
+        printf(BLUE"\nDigite o novo login: ");
+        scanf(" %[^\n]"RESET, login);
+    }
+
+    strcpy(user->login, login);
+
+    printf(GREEN"\n\nLogin alterado com sucesso! O seu novo login e: %s\n\n"RESET, user->login);
+
+    waitingEnter();
+}
+
+void resetData(User *user) {
+    user->ID = 0;
+    strcpy(user->login, "");
+    user->money = 0.0;
+    strcpy(user->name, "");
+    strcpy(user->password, "");
+    user->receiveTransfer = 0;
+}
+
 User *getIdAccount(User **startNodeUsers) {
 
     clearTerminal();
@@ -982,6 +1073,8 @@ void interfaceStartProgram(void) {
     printf("|__/  |__/ \\_______/|__/  |__/ \\_______/ \\______/ |__/ |__/ |__/      |_______/  \\_______/|__/  |__/|__/  \\__/\n"RESET);
 
     printf(GREEN"\n\nBem-vindo ao nosso banco!\n\n"RESET);
+
+    printf(BLUE"Pressione ENTER para visualizar o MENU:\n\n"RESET);
     getchar();
 }
 
@@ -1025,6 +1118,9 @@ void interfaceMenuOptionsAccount(User **startNodeUsers, User *user) {
     printf("|| [5] Historico da conta                   ||\n");
     printf("|| [6] Pagar conta                          ||\n");
     printf("|| [7] Excluir conta                        ||\n");
+    printf("|| [8] Alterar senha                        ||\n");
+    printf("|| [9] Alterar nome                         ||\n");
+    printf("|| [10] Alterar login                       ||\n");
     printf("|| [0] Sair da conta                        ||\n");
     printf("==============================================\n"RESET);
 }
