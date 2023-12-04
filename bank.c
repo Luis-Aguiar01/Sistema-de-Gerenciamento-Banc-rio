@@ -77,6 +77,7 @@ void setName(User *user);
 void setPassword(User *user);
 void changeLogin(User **startNodeUsers, User *user);
 void resetData(User *user);
+void checkTransfer(User *user);
 
 int main(void) {
 
@@ -393,6 +394,7 @@ void accountChoices(User **startNodeUsers , User *user) {
     while (choice != 0) {
 
         interfaceMenuOptionsAccount(startNodeUsers, user);
+        checkTransfer(user);
 
         printf(BLUE"\nDigite a sua escolha: ");
         scanf("%d"RESET, &choice);
@@ -469,7 +471,7 @@ void payBill(User *user) {
     double price;
     Registro *currentRegister = searchNewRegister(user);
 
-    printf(GREEN"Saldo atual: %.2lf\n\n"RESET, user->money);
+    printf(GOLDEN"Saldo atual: R$%.2lf\n\n"RESET, user->money);
 
     printf(BLUE"\nDigite o preco da conta: ");
     scanf("%lf"RESET, &price);
@@ -490,7 +492,7 @@ void payBill(User *user) {
 
     printPayment(currentRegister);
 
-    printf(GREEN"\n\nConta paga com sucesso!\n\n"RESET);
+    printf(GOLDEN"\n\nConta paga com sucesso!\n\n"RESET);
     waitingEnter();
 }
 
@@ -545,6 +547,8 @@ void deposit(User *user) {
     
     double value;
 
+    printf(GOLDEN"Saldo atual: R$%.2lf\n\n"RESET, user->money);
+
     printf(BLUE"Digite o valor do deposito: ");
     scanf("%lf"RESET, &value);
 
@@ -562,8 +566,8 @@ void deposit(User *user) {
     strcpy(currentRegister->type, "Deposito");
     currentRegister->value = value;
 
-    printf(GREEN"\n\nDeposito de R$%.2lf realizado com sucesso!!\n\n"RESET, value);
-    printf(GREEN"Saldo da conta: R$%.2lf\n"RESET, user->money);
+    printf(GOLDEN"\n\nDeposito de R$%.2lf realizado com sucesso!!\n\n"RESET, value);
+    printf(GOLDEN"Saldo da conta: R$%.2lf\n"RESET, user->money);
 
     waitingEnter();
 }
@@ -579,6 +583,8 @@ void getMoney(User *user) {
     printf("================================================\n"RESET);
 
     printf("\n\n");
+
+    printf(GOLDEN"Saldo atual: R$%.2lf\n\n"RESET, user->money);
 
     printf(BLUE"Digite o valor do saque: ");
     scanf("%lf"RESET, &value);
@@ -602,8 +608,8 @@ void getMoney(User *user) {
         strcpy(currentRegister->type, "Saque");
         currentRegister->value = -value;
 
-        printf(GREEN"\n\nSaque de R$%.2lf realizado com sucesso!!\n\n", value);
-        printf(GREEN"Saldo da conta: R$%.2lf\n"RESET, user->money);
+        printf(GOLDEN"\n\nSaque de R$%.2lf realizado com sucesso!!\n\n", value);
+        printf(GOLDEN"Saldo da conta: R$%.2lf\n"RESET, user->money);
     }
 
     waitingEnter();
@@ -622,12 +628,14 @@ void accountData(User *user) {
     printf("|| Saldo: R$%-10.2f                                 ||\n", user->money);
     printf("=========================================================\n"RESET);
 
+    waitingEnter();
+}
+
+void checkTransfer(User *user) {
     if (user->receiveTransfer != 0) {
         printf(GOLDEN"\n\nVoce recebeu %d transferencia(s).\n\n"RESET, user->receiveTransfer);
         user->receiveTransfer = 0;
     }
-
-    waitingEnter();
 }
 
 int isNull(User *user) {
@@ -672,7 +680,7 @@ void transfer(User **startNodeUsers, User *user) {
 
         if (toupper(choice) == 'S') {
             
-            printf(GREEN"\nSeu saldo atual: R$%.2lf\n\n"RESET, user->money);
+            printf(GOLDEN"\nSeu saldo atual: R$%.2lf\n\n"RESET, user->money);
             printf(BLUE"Digite o valor da transferencia: ");
             scanf("%lf"RESET, &value);
 
@@ -701,8 +709,8 @@ void transfer(User **startNodeUsers, User *user) {
 
             printReceipt(user, accountForMoneyTransfer, value);
 
-            printf(GREEN"\n\nTransferencia realizada com sucesso!\n\n"RESET);
-            printf(GREEN"Saldo atual: R$%.2lf\n"RESET, user->money);
+            printf(GOLDEN"\n\nTransferencia realizada com sucesso!\n\n"RESET);
+            printf(GOLDEN"Saldo atual: R$%.2lf\n"RESET, user->money);
             
             waitingEnter();
         }
@@ -749,7 +757,7 @@ void printReceipt(User *user, User *account, double value) {
     printf(GREEN"======================================================================\n");
     printf("||                 DETALHES DA TRANSFERENCIA                        ||\n");
     printf("======================================================================\n");
-    printf("|| Seu nome: %-15s                                        ||\n", user->name);
+    printf("|| Voce: %-15s                                            ||\n", user->name);
     printf("|| Enviado para: %-15s                                    ||\n", account->name);
     printf("|| Valor da transferencia: R$%-15.2lf                        ||\n", value);
     printf("======================================================================\n"RESET);
